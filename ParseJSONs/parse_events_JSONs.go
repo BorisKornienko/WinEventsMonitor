@@ -9,8 +9,16 @@ import (
 )
 
 type ParsedEvents struct {
-	ApplicationsCritical int `json:"Applications_Critical"`
-	SystemError          []struct {
+	ApplicationsCritical []struct {
+		Source      string `json:"Source"`
+		Description string `json:"description"`
+		ID          string `json:"id"`
+		Count       int    `json:"count"`
+		MachineName string `json:"machineName"`
+		DateNtime   string `json:"dateNtime"`
+		User        string `json:"user"`
+	} `json:"Applications_Critical"`
+	SystemError []struct {
 		Source      string `json:"Source"`
 		Description string `json:"description"`
 		ID          string `json:"id"`
@@ -20,7 +28,7 @@ type ParsedEvents struct {
 		User        string `json:"user"`
 	} `json:"System_Error"`
 	IP                  string `json:"ip"`
-	ApplicationsWarning struct {
+	ApplicationsWarning []struct {
 		Source      string `json:"Source"`
 		Description string `json:"description"`
 		ID          string `json:"id"`
@@ -29,7 +37,15 @@ type ParsedEvents struct {
 		DateNtime   string `json:"dateNtime"`
 		User        string `json:"user"`
 	} `json:"Applications_Warning"`
-	SystemCritical    int    `json:"System_Critical"`
+	SystemCritical []struct {
+		Source      string `json:"Source"`
+		Description string `json:"description"`
+		ID          string `json:"id"`
+		Count       int    `json:"count"`
+		MachineName string `json:"machineName"`
+		DateNtime   string `json:"dateNtime"`
+		User        string `json:"user"`
+	} `json:"Syste_Critical"`
 	Computer          string `json:"computer"`
 	ApplicationsError []struct {
 		Source      string `json:"Source"`
@@ -92,6 +108,7 @@ func getToStruct(jsonPath string) (ParsedEvents, string, string) {
 // }
 
 func main() {
+	// TEMP for testing
 	_, fName, _ := getToStruct("MMK-W-11271/2019_6_25.json")
 	println(fName)
 }
