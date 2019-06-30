@@ -24,9 +24,26 @@ function get-EventsToHash{
             }
         }    
 
-    #no need to continue if no events
+    
+    #For null category events and list organize
+    $zeroEvent = @{}
+    $zeroEvent['count'] = 0
+    $zeroEvent['id'] = ' '
+    $zeroEvent['source'] = ' '
+    $zeroEvent['user'] = ' '
+    $zeroEvent['description'] = ' '
+    $zeroEvent['machineName'] = ' '
+    $zeroEvent['dateNtime'] = ' '
+
+
     if($EvLD -eq $null){
-        return $false
+        
+        $eventsList = @()
+        $eventsList += $zeroEvent
+        #for [] in JSON
+        $eventsList += $zeroEvent
+
+        return($eventsList)
     }
     #counts by id
     $grouped = $EvLD | Group-Object -Property id -NoElement  
@@ -56,7 +73,8 @@ function get-EventsToHash{
                                     [string]($event.timecreated.second)
         $eventsList += $eventHash
     }
-    
+    #for [] in JSON
+    $eventsList += $zeroEvent
     return($eventsList)
 }
 
@@ -72,11 +90,12 @@ if(($computername -eq $null) -or ($ip -eq $null)){
 
 ########################### Out File
 $date = Get-Date
+$DestStorage = "C:\junk"
 $fileNameDate = [string]$date.Year+'_'+[string]$date.month+'_'+[string]$date.Day
-$outFile = "\\dc00-apps-25\allwsmonitor_incoming\"+$computername+"\"+$fileNameDate+".json"
-if(!(test-path ("\\dc00-apps-25\allwsmonitor_incoming\"+$computername+"\"))){
+$outFile = $DestStorage+"\allwsmonitor_incoming\"+$computername+"\"+$fileNameDate+".json"
+if(!(test-path ($DestStorage + "\allwsmonitor_incoming\"+$computername+"\"))){
     try{
-        New-Item -ItemType Directory ("\\dc00-apps-25\allwsmonitor_incoming\"+$computername+"\") -InformationAction SilentlyContinue
+        New-Item -ItemType Directory ($DestStorage + "\allwsmonitor_incoming\"+$computername+"\") -InformationAction SilentlyContinue
     }catch{
         return "writeNo"
         exit
