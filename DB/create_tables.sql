@@ -20,3 +20,13 @@ CREATE TABLE WsEventsMonitor.dbo.SystemErrors (
 	ip_v4 BINARY (4) NULL,
 	event_user NVARCHAR (50) NULL
 )
+
+-- And once other table is for filtering processed json-files
+
+CREATE TABLE WsEventsMonitor.dbo.ProcessedFiles (
+	id UNIQUEIDENTIFIER PRIMARY KEY,
+	machineDir NVARCHAR (50) NOT NULL,
+	fileDateName  NVARCHAR (50) NOT NULL,
+	processedDate DATETIME NOT NULL,
+	result NCHAR (10) NOT NULL
+)

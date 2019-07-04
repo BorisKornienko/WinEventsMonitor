@@ -70,6 +70,6 @@ go
 
 -- And here's how you would use it in an INSERT
 
-INSERT INTo myIpTable
-SELECT {other_column_values,...},
-       (SELECT bin FROM dbo.itvfBinaryIPv4('192.65.68.201'))
+-- INSERT INTo myIpTable
+-- SELECT {other_column_values,...},
+--        (SELECT bin FROM dbo.itvfBinaryIPv4('192.65.68.201'))
