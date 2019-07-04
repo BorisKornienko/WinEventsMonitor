@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"strings"
+	"path/filepath"
 )
 
 type ParsedEvents struct {
@@ -67,10 +67,10 @@ type ParsedEvents struct {
 	} `json:"System_Warning"`
 }
 
-func getToStruct(jsonPath string) (ParsedEvents, string, string) {
+func getToStruct(jsonPath string) ParsedEvents {
 	var eventFile ParsedEvents
-	var fMachineName string
-	var fDate string
+	// var fMachineName string
+	// var fDate string
 
 	// For each dir get path to JSON and unmarshal data to struct
 	// also get machine name from directory name and date from JSON name for next compr
@@ -90,25 +90,26 @@ func getToStruct(jsonPath string) (ParsedEvents, string, string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	/////////////////////////////////////
-
-	/////////////////////get machine name and fDate
-	pathParts := strings.Split(jsonPath, "/")
-	fMachineName = strings.Split(pathParts[0], ".")[0]
-	fDate = pathParts[1]
-	/////////////////////////////////////
 
 	defer f.Close()
 
-	return eventFile, fMachineName, fDate
+	return eventFile
 }
 
-// func writeToDatabase(fMachineName, fDate string, eventFile ParsedEvents) {
-
-// }
+func writeToDatabase(MachineFolder string, eventFile ParsedEvents) (int64, error) {
+	JSONFiles, err := ioutil.ReadDir(MachineFolder)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if JSONFiles == nil {
+		return 0, nil
+	}
+	for _, f := range JSONFiles {
+		JSONPath := filepath.Join(MachineFolder, f.Name())
+		eventStruct := getToStruct(JSONPath)
+	}
+}
 
 func main() {
 	// TEMP for testing
-	_, fName, _ := getToStruct("MMK-W-11271/2019_6_25.json")
-	println(fName)
 }
