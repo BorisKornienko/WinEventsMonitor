@@ -72,6 +72,10 @@ type ParsedEvents struct {
 	} `json:"System_Warning"`
 }
 
+// this var's for database connections
+var db *sql.DB
+var DBPort = 1433
+
 func getToStruct(jsonPath string) (ParsedEvents, error) {
 	var eventFile ParsedEvents
 	// var fMachineName string
@@ -104,6 +108,35 @@ func getToStruct(jsonPath string) (ParsedEvents, error) {
 	return eventFile, nil
 }
 
+func selectProcessed(MachineFolder, fileDateName string) (int, error) {
+	// This is for check if file with (may be) processed events is again adds to list
+
+	ctx := context.Background()
+	//check is database is alive
+	err := db.PingContext(ctx)
+	if err != nil{
+		return -1, err
+	}
+
+	tsql := fmt.Sprintf("SELECT * FROM WsEventsMonitor.ProcessedFiles WHERE machineDir = @machineDir AND fileDateName = @fileDateName;")
+
+	rows, err := db.QueryContext(
+		ctx,
+		tsql,
+		sql.Named("machineDir", MachineFolder),
+		sql.Named("fileDateName", fileDateName))
+	if err != nil {
+		return -1, err
+	}
+	defer rows.Close()
+
+    var count int
+    for rows.Next() {
+        count++
+	}
+	return count, nil
+}
+
 func writeToDatabase(MachineFolder, DBUser, DBPassw, DBServerName, DBName string,  eventFile ParsedEvents) (int64, error) {
 	JSONFiles, err := ioutil.ReadDir(MachineFolder)
 	if err != nil {
@@ -112,10 +145,6 @@ func writeToDatabase(MachineFolder, DBUser, DBPassw, DBServerName, DBName string
 	if JSONFiles == nil {
 		return 0, nil
 	}
-
-	var db *sql.DB
-
-	var DBPort = 1433
 
 	connString := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%d;database=%s;", DBServerName, DBUser, DBPassw, DBPort, DBName)
 
@@ -131,32 +160,26 @@ func writeToDatabase(MachineFolder, DBUser, DBPassw, DBServerName, DBName string
         log.Fatal(err)
     }
 
+	
 	for _, f := range JSONFiles {
+		isProcessed, err := selectProcessed(MachineFolder, f.Name())
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		if isProcessed != 0{
+			log.Println("this file is already: ", f.Name())
+			
+			continue
+		}
 		JSONPath := filepath.Join(MachineFolder, f.Name())
 		eventStruct, err := getToStruct(JSONPath)
 		if err != nil {
 			log.Fatal(err)
 			return -1, err
 		}
-		tsql := fmt.Sprintf("SELECT * FROM WsEventsMonitor.ProcessedFiles WHERE machineDir = @machineDir AND fileDateName = @fileDateName;")
-		rows, err := db.QueryContext(
-			ctx,
-			tsql,
-			sql.Named("machineDir", MachineFolder),
-			sql.Named("fileDateName", f.Name()))
-		if err != nil {
-			return -1, err
-		}
-		if rows != nil{
-			log.Fatal("file allready bieng processed: ", MachineFolder, f.Name())
-		}
-		defer rows.Close()
-
-
-
-
-
 	}
+	return 1, err
 }
 
 func main() {
