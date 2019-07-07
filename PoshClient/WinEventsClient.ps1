@@ -32,7 +32,7 @@ function get-EventsToHash{
     $zeroEvent['source'] = ' '
     $zeroEvent['user'] = ' '
     $zeroEvent['description'] = ' '
-    $zeroEvent['machineName'] = ' '
+    # $zeroEvent['machineName'] = ' '
     $zeroEvent['dateNtime'] = ' '
 
 
@@ -64,7 +64,7 @@ function get-EventsToHash{
             $eventHash['user'] = "NA"
         }
         $eventHash['description'] = $event.message
-        $eventHash['machineName'] = $event.machineName
+        # $eventHash['machineName'] = $event.machineName
         $eventHash["dateNtime"] = [string]($event.timecreated.year)+":"+`
                                     [string]($event.timecreated.month)+":"+`
                                     [string]($event.timecreated.day)+"-"+`

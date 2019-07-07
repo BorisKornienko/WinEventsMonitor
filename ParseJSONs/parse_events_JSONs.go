@@ -19,7 +19,7 @@ type ParsedEvents struct {
 		Description string `json:"description"`
 		ID          string `json:"id"`
 		Count       int    `json:"count"`
-		MachineName string `json:"machineName"`
+		// MachineName string `json:"machineName"`
 		DateNtime   string `json:"dateNtime"`
 		User        string `json:"user"`
 	} `json:"Applications_Critical"`
@@ -28,7 +28,7 @@ type ParsedEvents struct {
 		Description string `json:"description"`
 		ID          string `json:"id"`
 		Count       int    `json:"count"`
-		MachineName string `json:"machineName"`
+		// MachineName string `json:"machineName"`
 		DateNtime   string `json:"dateNtime"`
 		User        string `json:"user"`
 	} `json:"System_Error"`
@@ -38,7 +38,7 @@ type ParsedEvents struct {
 		Description string `json:"description"`
 		ID          string `json:"id"`
 		Count       int    `json:"count"`
-		MachineName string `json:"machineName"`
+		// MachineName string `json:"machineName"`
 		DateNtime   string `json:"dateNtime"`
 		User        string `json:"user"`
 	} `json:"Applications_Warning"`
@@ -47,7 +47,7 @@ type ParsedEvents struct {
 		Description string `json:"description"`
 		ID          string `json:"id"`
 		Count       int    `json:"count"`
-		MachineName string `json:"machineName"`
+		// MachineName string `json:"machineName"`
 		DateNtime   string `json:"dateNtime"`
 		User        string `json:"user"`
 	} `json:"System_Critical"`
@@ -57,7 +57,7 @@ type ParsedEvents struct {
 		Description string `json:"description"`
 		ID          string `json:"id"`
 		Count       int    `json:"count"`
-		MachineName string `json:"machineName"`
+		// MachineName string `json:"machineName"`
 		DateNtime   string `json:"dateNtime"`
 		User        string `json:"user"`
 	} `json:"Applications_Error"`
@@ -66,7 +66,7 @@ type ParsedEvents struct {
 		Description string `json:"description"`
 		ID          string `json:"id"`
 		Count       int    `json:"count"`
-		MachineName string `json:"machineName"`
+		// MachineName string `json:"machineName"`
 		DateNtime   string `json:"dateNtime"`
 		User        string `json:"user"`
 	} `json:"System_Warning"`
@@ -137,7 +137,9 @@ func selectProcessed(MachineFolder, fileDateName string) (int, error) {
 	return count, nil
 }
 
+
 func writeEvent(tableName string, eventID, eventSource, eventDescription, eventDateNtime, eventUser, string, eventCount int, eventFile ParsedEvents) (int64, error) {
+	// write each once event in events list
 	if eventCount == 0{
 		return 0, nil
 	}
