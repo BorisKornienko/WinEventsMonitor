@@ -9,7 +9,7 @@
 -- WsEventsMonitor.dbo.ApplicationsErrors
 -- WsEventsMonitor.dbo.ApplicationsWarnings
 
-CREATE TABLE WsEventsMonitor.dbo.SystemErrors (
+CREATE TABLE WinEventsMonitor.dbo.SystemErrors (
 	id UNIQUEIDENTIFIER PRIMARY KEY,
 	machine NVARCHAR (50) NOT NULL,
 	eventid NCHAR (10) NOT NULL,
@@ -17,7 +17,8 @@ CREATE TABLE WsEventsMonitor.dbo.SystemErrors (
 	description NVARCHAR (MAX),
 	count TINYINT NOT NULL,
 	datentime DATETIME NULL,
-	ip_v4 BINARY (4) NULL,
+	subnet2 TINYINT NOT NULL,
+	subnet3 TINYINT NOT NULL,
 	event_user NVARCHAR (50) NULL
 )
 
