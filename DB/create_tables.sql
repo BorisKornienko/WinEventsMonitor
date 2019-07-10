@@ -10,7 +10,7 @@
 -- WsEventsMonitor.dbo.ApplicationsWarnings
 
 CREATE TABLE WinEventsMonitor.dbo.SystemErrors (
-	id UNIQUEIDENTIFIER PRIMARY KEY,
+	id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 	machine NVARCHAR (50) NOT NULL,
 	eventid NCHAR (10) NOT NULL,
 	source NVARCHAR (MAX),
