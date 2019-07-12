@@ -25,9 +25,9 @@ CREATE TABLE WinEventsMonitor.dbo.SystemErrors (
 -- And once other table is for filtering processed json-files
 
 CREATE TABLE WinEventsMonitor.dbo.ProcessedFiles (
-	id UNIQUEIDENTIFIER PRIMARY KEY,
+	id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 	machineDir NVARCHAR (50) NOT NULL,
 	fileDateName  NVARCHAR (50) NOT NULL,
-	processedDate DATETIME NOT NULL,
+	processedDate DATETIME(120) NOT NULL,
 	result NCHAR (10) NOT NULL
 )

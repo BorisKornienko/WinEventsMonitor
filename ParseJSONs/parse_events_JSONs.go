@@ -11,6 +11,7 @@ import (
 	"database/sql"
 	"context"
 	"errors"
+	"time"
 )
 
 type ParsedEvents struct {
@@ -185,6 +186,52 @@ func writeEvent(tableName string, eventID, eventSource, eventDescription, eventD
 
 	return newID, nil
 }
+
+
+func writeProcessed(machineFolder, jsonName, result string) (int64, error) {
+	ctx := context.Background()
+	var err error
+
+	if db == nil {
+		err = error.New("Write event: db is null")
+		return -1, err
+	}
+	today := time.Now()
+	tsql := "INSERT INTO WinEventsMonitor.dbo.ProcessedFiles (machineDir, fileDateName, processedDate, result) VALUES (@machineDir, @fileDateName, @processedDate, @result); select convert(bigint, SCOPE_IDENTITY());"
+	tsql = fmt.Sprintf(tsql)
+	stmt, err := db.Prepare(tsql)
+	if err != nil{
+		return -1, err
+	}
+	defer stmt.Close()
+	row := stmt.QueryRowContext(
+		ctx,
+		sql.Named(machineDir, machineFolder),
+		sql.Named(fileDateName, jsonName), 
+		sql.Named(processedDate, today.Format("01-02-2006 15:04:05")),
+		sql.Named(result, result)
+	)
+	var newId int64
+	err = row.Scan(&newId)
+	if err != nil {
+		return -1, err
+	}
+
+	return newId, nil
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 func writeToDatabase(MachineFolder, DBUser, DBPassw, DBServerName, DBName string,  eventFile ParsedEvents) (int64, error) {
 	JSONFiles, err := ioutil.ReadDir(MachineFolder)
