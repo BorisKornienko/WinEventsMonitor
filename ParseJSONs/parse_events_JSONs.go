@@ -15,6 +15,7 @@ import (
 	"strings"
 )
 
+//ParsedEvents is for Event JSONs unmarshal
 type ParsedEvents struct {
 	ApplicationsCritical []struct {
 		Source      string `json:"Source"`
@@ -76,7 +77,9 @@ type ParsedEvents struct {
 
 // this var's for database connections
 var db *sql.DB
-var DBPort = 1433
+
+//DBPort is a standart MS SQL port
+var DBPort = 1433 
 
 func getToStruct(jsonPath string) (ParsedEvents, error) {
 	var eventFile ParsedEvents
@@ -223,7 +226,7 @@ func writeProcessed(machineFolder, jsonName, result string) (int64, error) {
 	var err error
 
 	if db == nil {
-		err = error.New("Write event: db is null")
+		err = errors.New("Write event: db is null")
 		return -1, err
 	}
 	today := time.Now()
@@ -236,18 +239,18 @@ func writeProcessed(machineFolder, jsonName, result string) (int64, error) {
 	defer stmt.Close()
 	row := stmt.QueryRowContext(
 		ctx,
-		sql.Named(machineDir, machineFolder),
-		sql.Named(fileDateName, jsonName), 
-		sql.Named(processedDate, today.Format("01-02-2006 15:04:05")),
-		sql.Named(result, result))
+		sql.Named("machineDir", machineFolder),
+		sql.Named("fileDateName", jsonName), 
+		sql.Named("processedDate", today.Format("01-02-2006 15:04:05")),
+		sql.Named("result", result))
 	
-	var newId int64
-	err = row.Scan(&newId)
+	var newID int64
+	err = row.Scan(&newID)
 	if err != nil {
 		return -1, err
 	}
 
-	return newId, nil
+	return newID, nil
 }
 
 
@@ -258,10 +261,10 @@ func writeProcessed(machineFolder, jsonName, result string) (int64, error) {
 
 
 
-func writeToDatabase(machineFolder, DBUser, DBPassw, DBServerName, DBName string,  eventFile ParsedEvents) (int, error) {
+func writeToDatabase(machineFolder, DBUser, DBPassw, DBServerName, DBName string) (int, error) {
 	JSONFiles, err := ioutil.ReadDir(machineFolder)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Cant open Machine Folder: ", err)
 	}
 	if JSONFiles == nil {
 		return 0, nil
@@ -302,15 +305,16 @@ func writeToDatabase(machineFolder, DBUser, DBPassw, DBServerName, DBName string
 				log.Println("Cant delete ", JSONPath)
 			}
 
-			id, err := writeProcessed(machineFolder, f.Name, "DENY")
+			id, err := writeProcessed(machineFolder, f.Name(), "DENY")
 			if err != nil{
 				fmt.Println("Cant write already processed file: ", err)
 			}
+			fmt.Println(id)
 			
 			continue
 		}
 		
-		eventStruct, err := getToStruct(JSONPath)
+		eventFile, err := getToStruct(JSONPath)
 		if err != nil {
 			log.Fatal(err)
 			return -1, err
@@ -318,7 +322,7 @@ func writeToDatabase(machineFolder, DBUser, DBPassw, DBServerName, DBName string
 		
 		// System Criticals
 		for _, systemCrit := range(eventFile.SystemCritical){
-			newID, err := writeEvent("SystemCriticals", systemCrit.ID, systemCrit.Source, systemCrit.Description, systemCrit.DateNtime, systemCrit.User, systemCrit.Count, eventFile)
+			_, err := writeEvent("SystemCriticals", systemCrit.ID, systemCrit.Source, systemCrit.Description, systemCrit.DateNtime, systemCrit.User, systemCrit.Count, eventFile)
 			if err != nil{
 				failDB ++
 			}
@@ -328,7 +332,7 @@ func writeToDatabase(machineFolder, DBUser, DBPassw, DBServerName, DBName string
 
 		// System Errors
 		for _, systemErr := range(eventFile.SystemError){
-			newID, err := writeEvent("SystemErrors", systemErr.ID, systemErr.Source, systemErr.Description, systemErr.DateNtime, systemErr.User, systemErr.Count, eventFile)
+			_, err := writeEvent("SystemErrors", systemErr.ID, systemErr.Source, systemErr.Description, systemErr.DateNtime, systemErr.User, systemErr.Count, eventFile)
 			if err != nil{
 				failDB ++
 			}
@@ -338,7 +342,7 @@ func writeToDatabase(machineFolder, DBUser, DBPassw, DBServerName, DBName string
 
 		// System Warnings
 		for _, systemWarn := range(eventFile.SystemWarning){
-			newID, err := writeEvent("SystemWarnings", systemWarn.ID, systemWarn.Source, systemWarn.Description, systemWarn.DateNtime, systemWarn.User, systemWarn.Count, eventFile)
+			_, err := writeEvent("SystemWarnings", systemWarn.ID, systemWarn.Source, systemWarn.Description, systemWarn.DateNtime, systemWarn.User, systemWarn.Count, eventFile)
 			if err != nil{
 				failDB ++
 			}
@@ -348,7 +352,7 @@ func writeToDatabase(machineFolder, DBUser, DBPassw, DBServerName, DBName string
 
 		// Applications Criticals
 		for _, appsCrit := range(eventFile.ApplicationsCritical){
-			newID, err := writeEvent("ApplicationsCriticals", appsCrit.ID, appsCrit.Source, appsCrit.Description, appsCrit.DateNtime, appsCrit.User, appsCrit.Count, eventFile)
+			_, err := writeEvent("ApplicationsCriticals", appsCrit.ID, appsCrit.Source, appsCrit.Description, appsCrit.DateNtime, appsCrit.User, appsCrit.Count, eventFile)
 			if err != nil{
 				failDB ++
 			}
@@ -358,7 +362,7 @@ func writeToDatabase(machineFolder, DBUser, DBPassw, DBServerName, DBName string
 
 		// Applications Errors
 		for _, appsErr := range(eventFile.ApplicationsError){
-			newID, err := writeEvent("ApplicationsErrors", appsErr.ID, appsErr.Source, appsErr.Description, appsErr.DateNtime, appsErr.User, appsErr.Count, eventFile)
+			_, err := writeEvent("ApplicationsErrors", appsErr.ID, appsErr.Source, appsErr.Description, appsErr.DateNtime, appsErr.User, appsErr.Count, eventFile)
 			if err != nil{
 				failDB ++
 			}
@@ -368,7 +372,7 @@ func writeToDatabase(machineFolder, DBUser, DBPassw, DBServerName, DBName string
 
 		// Applications Warnings
 		for _, appsWarn := range(eventFile.ApplicationsWarning){
-			newID, err := writeEvent("ApplicationsErrors", appsWarn.ID, appsWarn.Source, appsWarn.Description, appsWarn.DateNtime, appsWarn.User, appsWarn.Count, eventFile)
+			_, err := writeEvent("ApplicationsErrors", appsWarn.ID, appsWarn.Source, appsWarn.Description, appsWarn.DateNtime, appsWarn.User, appsWarn.Count, eventFile)
 			if err != nil{
 				failDB ++
 			}
@@ -379,17 +383,42 @@ func writeToDatabase(machineFolder, DBUser, DBPassw, DBServerName, DBName string
 		if failDB != 0{
 			fmt.Println("DB fails: ", failDB)
 		}else{
-			os.Remove(f.Name)
+			os.Remove(f.Name())
 		}
 	}
 
 	if failDB != 0{
-		failDBerr := new.Error("fail of DB writes: ", failDB)
+		err := fmt.Errorf("DB writes count: %d", failDB)
+		return succesDB, err
 	}
 	
-	return succesDB, failDBerr
+	return succesDB, nil
 }
 
 func main() {
-	// TEMP for testing
+	rootPath := os.Args[1]
+	DBUser := os.Args[2]
+	DBPassw := os.Args[3]
+	DBServerName := os.Args[4]
+	DBName := os.Args[5]
+
+
+	listMachineFolders, err := ioutil.ReadDir(rootPath)
+	if err != nil{
+		log.Fatal("cant read root folder ", rootPath)
+	}
+	for _, machineFolder := range listMachineFolders {
+		if machineFolder.IsDir() != true {
+			fmt.Println("it is not a directory: ", machineFolder.Name())
+			continue
+		}
+		// writeToDatabase(machineFolder, DBUser, DBPassw, DBServerName, DBName string,  eventFile ParsedEvents) (int, error) {
+		
+		succesWrites, err := writeToDatabase(machineFolder.Name(), DBUser, DBPassw, DBServerName, DBName)
+		if err != nil{
+			log.Println(err)
+			continue
+		}
+		fmt.Println(succesWrites)
+	}
 }
