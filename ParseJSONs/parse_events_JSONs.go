@@ -12,6 +12,7 @@ import (
 	"context"
 	"errors"
 	"time"
+	"strings"
 )
 
 type ParsedEvents struct {
@@ -139,7 +140,7 @@ func selectProcessed(MachineFolder, fileDateName string) (int, error) {
 }
 
 
-func writeEvent(tableName string, eventID, eventSource, eventDescription, eventDateNtime, eventUser, string, eventCount int, eventFile ParsedEvents) (int64, error) {
+func writeEvent(tableName, eventID, eventSource, eventDescription, eventDateNtime, eventUser string, eventCount int, eventFile ParsedEvents) (int64, error) {
 	// write each once event in events list
 	if eventCount == 0{
 		return 0, nil
@@ -158,13 +159,43 @@ func writeEvent(tableName string, eventID, eventSource, eventDescription, eventD
 		return -1, err
 	}
 
-	tsql := "INSERT INTO WsEventsMonitor."+ tableName +" (machine, eventid, source, description, count, datentime, ip_v4, event_user) VALUES (@machine, @eventid, @source, @description, @count, @datentime, @ip_v4, @event_user);"
+	tsql := "INSERT INTO WinEventsMonitor.dbo."+tableName+"(machine, eventid, source, description, count, datentime, subnet2, subnet3, event_user) VALUES (@machine, @eventid, @source, @description, @count, @datentime, @subnet2, @subnet3, @event_user); select convert(bigint, SCOPE_IDENTITY());"
 	tsql = fmt.Sprintf(tsql)
 	stmt, err := db.Prepare(tsql)
     if err != nil {
        return -1, err
 	}
 	defer stmt.Close()
+	// "dateNtime":  "2019:7:4-9:32:29",	'2004-05-23T14:25:10'
+	eDate := strings.Split(eventDateNtime, "-")[0]
+	eTime := strings.Split(eventDateNtime, "-")[1]
+	
+	// split date to get T-SQL standart date
+	eYear := strings.Split(eDate, ":")[0]
+	eMonth := strings.Split(eDate, ":")[1]
+	if len(eMonth) < 2{
+		eMonth = "0" + eMonth
+	}
+	eDay := strings.Split(eDate, ":")[2]
+	if len(eDay) < 2 {
+		eDay = "0"+eDay
+	}
+	// split time to get T-SQL standart time
+	eHour := strings.Split(eTime, ":")[0]
+	if len(eHour) < 2 {
+		eHour = "0" + eHour
+	}
+	eMinute := strings.Split(eTime, ":")[1]
+	if len(eMinute) < 2 {
+		eMinute = "0" + eMinute
+	}
+	eSecond := strings.Split(eTime, ":")[2]
+	if len(eSecond) < 2 {
+		eSecond = "0" + eSecond
+	}
+	dateNtime := eYear+"-"+eMonth+"-"+eDay+"T"+eHour+":"+eMinute+":"+eSecond
+	subnet2 := strings.Split(eventFile.IP, ".")[1]
+	subnet3 := strings.Split(eventFile.IP, ".")[2]
 
 	row := stmt.QueryRowContext(
         ctx,
@@ -173,10 +204,9 @@ func writeEvent(tableName string, eventID, eventSource, eventDescription, eventD
 		sql.Named("source", eventSource),
 		sql.Named("description", eventDescription),
 		sql.Named("count", eventCount),
-		// In this place we string, it's must be a MSSQL DateTime
-		// sql.Named("datentime", eventDateNtime),
-		// No :) IP must be writed by SQlfunction or with the Go string to binary convert
-		// sql.Named("ip_v4", eventFile.IP),
+		sql.Named("datentime", dateNtime),
+		sql.Named("subnet2", subnet2),
+		sql.Named("subnet3", subnet3),
 		sql.Named("event_user", eventUser))
     var newID int64
     err = row.Scan(&newID)
@@ -209,8 +239,8 @@ func writeProcessed(machineFolder, jsonName, result string) (int64, error) {
 		sql.Named(machineDir, machineFolder),
 		sql.Named(fileDateName, jsonName), 
 		sql.Named(processedDate, today.Format("01-02-2006 15:04:05")),
-		sql.Named(result, result)
-	)
+		sql.Named(result, result))
+	
 	var newId int64
 	err = row.Scan(&newId)
 	if err != nil {
@@ -228,13 +258,8 @@ func writeProcessed(machineFolder, jsonName, result string) (int64, error) {
 
 
 
-
-
-
-
-
-func writeToDatabase(MachineFolder, DBUser, DBPassw, DBServerName, DBName string,  eventFile ParsedEvents) (int64, error) {
-	JSONFiles, err := ioutil.ReadDir(MachineFolder)
+func writeToDatabase(machineFolder, DBUser, DBPassw, DBServerName, DBName string,  eventFile ParsedEvents) (int, error) {
+	JSONFiles, err := ioutil.ReadDir(machineFolder)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -256,20 +281,32 @@ func writeToDatabase(MachineFolder, DBUser, DBPassw, DBServerName, DBName string
         log.Fatal(err)
     }
 
+	var succesDB int
+	var failDB int
+	
+	succesDB = 0
+	failDB = 0
+	
 	
 	for _, f := range JSONFiles {
-		JSONPath := filepath.Join(MachineFolder, f.Name())
-		isProcessed, err := selectProcessed(MachineFolder, f.Name())
+		JSONPath := filepath.Join(machineFolder, f.Name())
+		isProcessed, err := selectProcessed(machineFolder, f.Name())
 		if err != nil {
 			log.Println(err)
 			continue
 		}
 		if isProcessed != 0{
-			log.Println("this file is already: ", f.Name())
+			log.Println("this file is already processed: ", f.Name())
 			err = os.Remove(JSONPath)
 			if err != nil {
 				log.Println("Cant delete ", JSONPath)
 			}
+
+			id, err := writeProcessed(machineFolder, f.Name, "DENY")
+			if err != nil{
+				fmt.Println("Cant write already processed file: ", err)
+			}
+			
 			continue
 		}
 		
@@ -279,15 +316,78 @@ func writeToDatabase(MachineFolder, DBUser, DBPassw, DBServerName, DBName string
 			return -1, err
 		}
 		
+		// System Criticals
+		for _, systemCrit := range(eventFile.SystemCritical){
+			newID, err := writeEvent("SystemCriticals", systemCrit.ID, systemCrit.Source, systemCrit.Description, systemCrit.DateNtime, systemCrit.User, systemCrit.Count, eventFile)
+			if err != nil{
+				failDB ++
+			}
+			succesDB ++
+			fmt.Println("sucess DB writed: ", succesDB)
+		}
 
-		// for _, systemCrit := range(eventStruct.SystemCritical){
+		// System Errors
+		for _, systemErr := range(eventFile.SystemError){
+			newID, err := writeEvent("SystemErrors", systemErr.ID, systemErr.Source, systemErr.Description, systemErr.DateNtime, systemErr.User, systemErr.Count, eventFile)
+			if err != nil{
+				failDB ++
+			}
+			succesDB ++
+			fmt.Println("sucess DB writed: ", succesDB)
+		}
 
-		// }
-		
+		// System Warnings
+		for _, systemWarn := range(eventFile.SystemWarning){
+			newID, err := writeEvent("SystemWarnings", systemWarn.ID, systemWarn.Source, systemWarn.Description, systemWarn.DateNtime, systemWarn.User, systemWarn.Count, eventFile)
+			if err != nil{
+				failDB ++
+			}
+			succesDB ++
+			fmt.Println("sucess DB writed: ", succesDB)
+		}
+
+		// Applications Criticals
+		for _, appsCrit := range(eventFile.ApplicationsCritical){
+			newID, err := writeEvent("ApplicationsCriticals", appsCrit.ID, appsCrit.Source, appsCrit.Description, appsCrit.DateNtime, appsCrit.User, appsCrit.Count, eventFile)
+			if err != nil{
+				failDB ++
+			}
+			succesDB ++
+			fmt.Println("sucess DB writed: ", succesDB)
+		}
+
+		// Applications Errors
+		for _, appsErr := range(eventFile.ApplicationsError){
+			newID, err := writeEvent("ApplicationsErrors", appsErr.ID, appsErr.Source, appsErr.Description, appsErr.DateNtime, appsErr.User, appsErr.Count, eventFile)
+			if err != nil{
+				failDB ++
+			}
+			succesDB ++
+			fmt.Println("sucess DB writed: ", succesDB)
+		}
+
+		// Applications Warnings
+		for _, appsWarn := range(eventFile.ApplicationsWarning){
+			newID, err := writeEvent("ApplicationsErrors", appsWarn.ID, appsWarn.Source, appsWarn.Description, appsWarn.DateNtime, appsWarn.User, appsWarn.Count, eventFile)
+			if err != nil{
+				failDB ++
+			}
+			succesDB ++
+			fmt.Println("sucess DB writed: ", succesDB)
+		}
+
+		if failDB != 0{
+			fmt.Println("DB fails: ", failDB)
+		}else{
+			os.Remove(f.Name)
+		}
 	}
 
-	// NO! Not is 1. It is temp!
-	return 1, err
+	if failDB != 0{
+		failDBerr := new.Error("fail of DB writes: ", failDB)
+	}
+	
+	return succesDB, failDBerr
 }
 
 func main() {
