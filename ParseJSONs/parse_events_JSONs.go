@@ -13,6 +13,7 @@ import (
 	"errors"
 	"time"
 	"strings"
+	"bytes"
 )
 
 //ParsedEvents is for Event JSONs unmarshal
@@ -93,18 +94,21 @@ func getToStruct(jsonPath string) (ParsedEvents, error) {
 	///////////////////// parse to struct block
 	f, err := os.Open(jsonPath)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("File open: ", err)
 		return eventFile, err
 	}
+	// println("os opened: ", f)
 	byteValue, err := ioutil.ReadAll(f)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("File read: ", err)
 		return eventFile, err
 	}
+	// println(string(byteValue))
+	byteValue = bytes.TrimPrefix(byteValue, []byte("\xef\xbb\xbf"))
 
 	err = json.Unmarshal(byteValue, &eventFile)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Unmarshaling error: ", err)
 		return eventFile, err
 	}
 
@@ -123,7 +127,7 @@ func selectProcessed(MachineFolder, fileDateName string) (int, error) {
 		return -1, err
 	}
 
-	tsql := fmt.Sprintf("SELECT * FROM WsEventsMonitor.ProcessedFiles WHERE machineDir = @machineDir AND fileDateName = @fileDateName;")
+	tsql := fmt.Sprintf("SELECT * FROM WinEventsMonitor.dbo.ProcessedFiles WHERE machineDir = @machineDir AND fileDateName = @fileDateName;")
 
 	rows, err := db.QueryContext(
 		ctx,
@@ -131,6 +135,8 @@ func selectProcessed(MachineFolder, fileDateName string) (int, error) {
 		sql.Named("machineDir", MachineFolder),
 		sql.Named("fileDateName", fileDateName))
 	if err != nil {
+		// err = errors.New("cant read from ProcessedFiles table")
+		err = fmt.Errorf("ProcessedFiles table read error: %q", err)
 		return -1, err
 	}
 	defer rows.Close()
@@ -253,16 +259,10 @@ func writeProcessed(machineFolder, jsonName, result string) (int64, error) {
 	return newID, nil
 }
 
-
-
-
-
-
-
-
-
-func writeToDatabase(machineFolder, DBUser, DBPassw, DBServerName, DBName string) (int, error) {
-	JSONFiles, err := ioutil.ReadDir(machineFolder)
+// Main database write function
+func writeToDatabase(rootPath, machineFolder, DBUser, DBPassw, DBServerName, DBName string) (int, error) {
+	machineFolderPath := rootPath+"\\"+machineFolder
+	JSONFiles, err := ioutil.ReadDir(machineFolderPath)
 	if err != nil {
 		log.Fatal("Cant open Machine Folder: ", err)
 	}
@@ -292,7 +292,7 @@ func writeToDatabase(machineFolder, DBUser, DBPassw, DBServerName, DBName string
 	
 	
 	for _, f := range JSONFiles {
-		JSONPath := filepath.Join(machineFolder, f.Name())
+		JSONPath := filepath.Join(rootPath, machineFolder, f.Name())
 		isProcessed, err := selectProcessed(machineFolder, f.Name())
 		if err != nil {
 			log.Println(err)
@@ -388,7 +388,7 @@ func writeToDatabase(machineFolder, DBUser, DBPassw, DBServerName, DBName string
 	}
 
 	if failDB != 0{
-		err := fmt.Errorf("DB writes count: %d", failDB)
+		err := fmt.Errorf("DB writes errors: %d", failDB)
 		return succesDB, err
 	}
 	
@@ -414,7 +414,7 @@ func main() {
 		}
 		// writeToDatabase(machineFolder, DBUser, DBPassw, DBServerName, DBName string,  eventFile ParsedEvents) (int, error) {
 		
-		succesWrites, err := writeToDatabase(machineFolder.Name(), DBUser, DBPassw, DBServerName, DBName)
+		succesWrites, err := writeToDatabase(rootPath, machineFolder.Name(), DBUser, DBPassw, DBServerName, DBName)
 		if err != nil{
 			log.Println(err)
 			continue
