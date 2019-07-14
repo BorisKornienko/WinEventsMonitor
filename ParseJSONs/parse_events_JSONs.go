@@ -383,7 +383,8 @@ func writeToDatabase(rootPath, machineFolder, DBUser, DBPassw, DBServerName, DBN
 		if failDB != 0{
 			fmt.Println("DB fails: ", failDB)
 		}else{
-			os.Remove(f.Name())
+			writeProcessed(machineFolder, f.Name(), "ALLOW")
+			os.Remove(JSONPath)
 		}
 	}
 
@@ -412,7 +413,6 @@ func main() {
 			fmt.Println("it is not a directory: ", machineFolder.Name())
 			continue
 		}
-		// writeToDatabase(machineFolder, DBUser, DBPassw, DBServerName, DBName string,  eventFile ParsedEvents) (int, error) {
 		
 		succesWrites, err := writeToDatabase(rootPath, machineFolder.Name(), DBUser, DBPassw, DBServerName, DBName)
 		if err != nil{
