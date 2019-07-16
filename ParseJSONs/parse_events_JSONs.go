@@ -372,7 +372,7 @@ func writeToDatabase(rootPath, machineFolder, DBUser, DBPassw, DBServerName, DBN
 
 		// Applications Warnings
 		for _, appsWarn := range(eventFile.ApplicationsWarning){
-			_, err := writeEvent("ApplicationsErrors", appsWarn.ID, appsWarn.Source, appsWarn.Description, appsWarn.DateNtime, appsWarn.User, appsWarn.Count, eventFile)
+			_, err := writeEvent("ApplicationsWarnings", appsWarn.ID, appsWarn.Source, appsWarn.Description, appsWarn.DateNtime, appsWarn.User, appsWarn.Count, eventFile)
 			if err != nil{
 				failDB ++
 			}
