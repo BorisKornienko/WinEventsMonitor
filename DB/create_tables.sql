@@ -15,7 +15,7 @@ CREATE TABLE WinEventsMonitor.dbo.SystemErrors (
 	eventid NCHAR (10) NOT NULL,
 	source NVARCHAR (MAX),
 	description NVARCHAR (MAX),
-	count TINYINT NOT NULL,
+	count INT NOT NULL,
 	datentime DATETIME NULL,
 	subnet2 TINYINT NOT NULL,
 	subnet3 TINYINT NOT NULL,
