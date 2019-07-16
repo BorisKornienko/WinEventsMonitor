@@ -83,6 +83,9 @@ function get-EventsToHash{
 
 $computername = ((gwmi win32_computersystem -ErrorAction SilentlyContinue).name).toupper()
 $ip = (gwmi win32_networkadapterconfiguration).ipaddress | ? {$_ -like "10.*"}
+if($ip -is [Array]){
+    $ip = $ip[0]
+}
 if(($computername -eq $null) -or ($ip -eq $null)){
     $computername = ($env:COMPUTERNAME).toupper()
     $ip = '127.0.0.1'

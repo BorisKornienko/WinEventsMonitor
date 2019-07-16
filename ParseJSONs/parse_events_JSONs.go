@@ -299,17 +299,17 @@ func writeToDatabase(rootPath, machineFolder, DBUser, DBPassw, DBServerName, DBN
 			continue
 		}
 		if isProcessed != 0{
-			log.Println("this file is already processed: ", f.Name())
+			log.Printf("this file is already processed: %s,%s", machineFolder, f.Name())
 			err = os.Remove(JSONPath)
 			if err != nil {
-				log.Println("Cant delete ", JSONPath)
+				log.Printf("Cant delete %s", JSONPath)
 			}
 
-			id, err := writeProcessed(machineFolder, f.Name(), "DENY")
+			_, err := writeProcessed(machineFolder, f.Name(), "DENY")
 			if err != nil{
 				fmt.Println("Cant write already processed file: ", err)
 			}
-			fmt.Println(id)
+			// fmt.Println(id)
 			
 			continue
 		}
@@ -357,7 +357,7 @@ func writeToDatabase(rootPath, machineFolder, DBUser, DBPassw, DBServerName, DBN
 				failDB ++
 			}
 			succesDB ++
-			fmt.Println("sucess DB writed: ", succesDB)
+			// fmt.Println("sucess DB writed: ", succesDB)
 		}
 
 		// Applications Errors
@@ -367,7 +367,7 @@ func writeToDatabase(rootPath, machineFolder, DBUser, DBPassw, DBServerName, DBN
 				failDB ++
 			}
 			succesDB ++
-			fmt.Println("sucess DB writed: ", succesDB)
+			// fmt.Println("sucess DB writed: ", succesDB)
 		}
 
 		// Applications Warnings
@@ -377,11 +377,12 @@ func writeToDatabase(rootPath, machineFolder, DBUser, DBPassw, DBServerName, DBN
 				failDB ++
 			}
 			succesDB ++
-			fmt.Println("sucess DB writed: ", succesDB)
+			// fmt.Println("sucess DB writed: ", succesDB)
 		}
 
 		if failDB != 0{
-			fmt.Println("DB fails: ", failDB)
+			fmt.Printf("DB fails: %s, %s", machineFolder, f.Name())
+			writeProcessed(machineFolder, f.Name(), "WARN")
 		}else{
 			writeProcessed(machineFolder, f.Name(), "ALLOW")
 			os.Remove(JSONPath)
