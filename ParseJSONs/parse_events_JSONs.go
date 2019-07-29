@@ -327,7 +327,7 @@ func writeToDatabase(rootPath, machineFolder, DBUser, DBPassw, DBServerName, DBN
 				failDB ++
 			}
 			succesDB ++
-			fmt.Println("sucess DB writed: ", succesDB)
+			// fmt.Println("sucess DB writed: ", succesDB)
 		}
 
 		// System Errors
@@ -337,7 +337,7 @@ func writeToDatabase(rootPath, machineFolder, DBUser, DBPassw, DBServerName, DBN
 				failDB ++
 			}
 			succesDB ++
-			fmt.Println("sucess DB writed: ", succesDB)
+			// fmt.Println("sucess DB writed: ", succesDB)
 		}
 
 		// System Warnings
@@ -347,7 +347,7 @@ func writeToDatabase(rootPath, machineFolder, DBUser, DBPassw, DBServerName, DBN
 				failDB ++
 			}
 			succesDB ++
-			fmt.Println("sucess DB writed: ", succesDB)
+			// fmt.Println("sucess DB writed: ", succesDB)
 		}
 
 		// Applications Criticals
@@ -409,17 +409,20 @@ func main() {
 	if err != nil{
 		log.Fatal("cant read root folder ", rootPath)
 	}
-	for _, machineFolder := range listMachineFolders {
-		if machineFolder.IsDir() != true {
-			fmt.Println("it is not a directory: ", machineFolder.Name())
-			continue
-		}
-		
-		succesWrites, err := writeToDatabase(rootPath, machineFolder.Name(), DBUser, DBPassw, DBServerName, DBName)
-		if err != nil{
-			log.Println(err)
-			continue
-		}
-		fmt.Println(succesWrites)
+	f := func (listMachineFolders []os.FileInfo){
+		for _, machineFolder := range listMachineFolders {
+			if machineFolder.IsDir() != true {
+				fmt.Println("it is not a directory: ", machineFolder.Name())
+				continue
+			}
+			
+			_, err := writeToDatabase(rootPath, machineFolder.Name(), DBUser, DBPassw, DBServerName, DBName)
+			if err != nil{
+				log.Println(err)
+				continue
+			}
+		// fmt.Println(succesWrites)
+		} 
 	}
+	go f(listMachineFolders)
 }
