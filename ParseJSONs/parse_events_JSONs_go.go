@@ -409,20 +409,23 @@ func main() {
 	if err != nil{
 		log.Fatal("cant read root folder ", rootPath)
 	}
-	f := func (listMachineFolders []os.FileInfo){
-		for _, machineFolder := range listMachineFolders {
-			if machineFolder.IsDir() != true {
-				fmt.Println("it is not a directory: ", machineFolder.Name())
-				continue
-			}
-			
-			_, err := writeToDatabase(rootPath, machineFolder.Name(), DBUser, DBPassw, DBServerName, DBName)
-			if err != nil{
-				log.Println(err)
-				continue
-			}
-		// fmt.Println(succesWrites)
-		} 
+	f := func (machineFolder os.FileInfo) {
+		if machineFolder.IsDir() != true {
+			fmt.Println("it is not a directory: ", machineFolder.Name())
+			// continue
+		}
+		
+		_, err := writeToDatabase(rootPath, machineFolder.Name(), DBUser, DBPassw, DBServerName, DBName)
+		if err != nil{
+			log.Println(err)
+			// continue
+		}
 	}
-	go f(listMachineFolders)
+	for _, machineFolder := range listMachineFolders {
+
+		go f(machineFolder)
+	// fmt.Println(succesWrites)
+	} 
+	
+	// go f(listMachineFolders)
 }
