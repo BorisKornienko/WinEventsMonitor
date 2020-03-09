@@ -17,63 +17,24 @@ import (
 )
 
 //ParsedEvents is for Event JSONs unmarshal
-type ParsedEvents struct {
-	ApplicationsCritical []struct {
-		Source      string `json:"Source"`
-		Description string `json:"description"`
-		ID          string `json:"id"`
-		Count       int    `json:"count"`
-		// MachineName string `json:"machineName"`
-		DateNtime   string `json:"dateNtime"`
-		User        string `json:"user"`
-	} `json:"Applications_Critical"`
-	SystemError []struct {
-		Source      string `json:"Source"`
-		Description string `json:"description"`
-		ID          string `json:"id"`
-		Count       int    `json:"count"`
-		// MachineName string `json:"machineName"`
-		DateNtime   string `json:"dateNtime"`
-		User        string `json:"user"`
-	} `json:"System_Error"`
-	IP                  string `json:"ip"`
-	ApplicationsWarning []struct {
-		Source      string `json:"Source"`
-		Description string `json:"description"`
-		ID          string `json:"id"`
-		Count       int    `json:"count"`
-		// MachineName string `json:"machineName"`
-		DateNtime   string `json:"dateNtime"`
-		User        string `json:"user"`
-	} `json:"Applications_Warning"`
-	SystemCritical []struct {
-		Source      string `json:"Source"`
-		Description string `json:"description"`
-		ID          string `json:"id"`
-		Count       int    `json:"count"`
-		// MachineName string `json:"machineName"`
-		DateNtime   string `json:"dateNtime"`
-		User        string `json:"user"`
-	} `json:"System_Critical"`
-	Computer          string `json:"computer"`
-	ApplicationsError []struct {
-		Source      string `json:"Source"`
-		Description string `json:"description"`
-		ID          string `json:"id"`
-		Count       int    `json:"count"`
-		// MachineName string `json:"machineName"`
-		DateNtime   string `json:"dateNtime"`
-		User        string `json:"user"`
-	} `json:"Applications_Error"`
-	SystemWarning []struct {
-		Source      string `json:"Source"`
-		Description string `json:"description"`
-		ID          string `json:"id"`
-		Count       int    `json:"count"`
-		// MachineName string `json:"machineName"`
-		DateNtime   string `json:"dateNtime"`
-		User        string `json:"user"`
-	} `json:"System_Warning"`
+type Event struct{
+	Source string `json:"source"`
+	Description string `json: "description"`
+	ID string `json: "id"`
+	Count int `json: "count"`
+	DateNTime string `json: "datentime"`
+	User string `json: "datentime"`
+}
+type Events []Event
+type EventsPack struct{
+	ApplicationsCritical Events `json: "Applications_Critical"`
+	ApplicationsError Events `json: "Applications_Error"`
+	ApplicationsWarning Events `json: "Applications_Warning"`
+	SystemCritical Events `json: "System_Critical"`
+	SystemError Events `json: "System_Error"`
+	SystemWarning Events `json: "System_Warning"`
+	Computer string `json: "computer"`
+	IP string `json: "ip"`
 }
 
 // this var's for database connections
