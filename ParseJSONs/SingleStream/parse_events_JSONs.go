@@ -26,7 +26,7 @@ type Event struct{
 	User string `json: "datentime"`
 }
 type Events []Event
-type EventsPack struct{
+type ParsedEvents struct{
 	ApplicationsCritical Events `json: "Applications_Critical"`
 	ApplicationsError Events `json: "Applications_Error"`
 	ApplicationsWarning Events `json: "Applications_Warning"`
