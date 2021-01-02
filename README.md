@@ -1,6 +1,22 @@
-# WinEventsMonitor
-## The goal of this system is a searching of anomalies in Windows Events
-Powershell script get events from the machine, struct them in to the JSON file and put in to the network share.
-Golang parse these files, insert data in MS SQL and remove files. 
-From DB data can be visualizing by the Grafana, PowerBI, D3, etc.
-### Visualize anomaly in medium or large environments it's a pretty important thing, as I think.
+# Introduction 
+The main purpose of this system is a getting experience in DevOps practices and in client-server system development :)
+
+ColorPi can be used for collecting Windows Events from all Windows systems with installed WMF 5. It's completely free and events packages from machines are pretty small. You can customize the frequency of events sending for your purposes.
+
+# Getting Started
+TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
+1.	Installation process
+2.	Software dependencies
+3.	Latest releases
+4.	API references
+
+# Build and Test
+TODO: Describe and show how to build your code and run the tests. 
+
+# Contribute
+TODO: Explain how other users and developers can contribute to make your code better. 
+
+If you want to learn more about creating good readme files then refer the following [guidelines](https://docs.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops). You can also seek inspiration from the below readme files:
+- [ASP.NET Core](https://github.com/aspnet/Home)
+- [Visual Studio Code](https://github.com/Microsoft/vscode)
+- [Chakra Core](https://github.com/Microsoft/ChakraCore)
