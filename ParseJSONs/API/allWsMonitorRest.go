@@ -15,9 +15,8 @@ import (
 )
 
 const (
-	ConnHost    = "localhost"
-	ConnPort    = "8080"
-	MongoDbUrl = "127.0.0.1"
+	ConnHost = "localhost"
+	ConnPort = "8080"
 )
 
 type Route struct {
@@ -115,7 +114,10 @@ var session *mgo.Session
 var connectionError error
 
 func init() {
-	session, connectionError = mgo.Dial(MongoDbUrl)
+	var dbUser string
+	var dbPassword string
+	mongoDbUrl := "mongodb://" + dbUser + ":" + dbPassword + "@colorpi.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&maxIdleTimeMS=120000&appName=@colorpi@"
+	session, connectionError = mgo.Dial(mongoDbUrl)
 	if connectionError != nil {
 		log.Fatal("error connecting to databaase :: ", connectionError)
 	}
