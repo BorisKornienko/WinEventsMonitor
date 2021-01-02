@@ -9,17 +9,15 @@ import (
 	"strings"
 	"time"
 
-	"./echartLine"
 	"github.com/gorilla/mux"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
 const (
-	// Conn_Host    = "dc00-apps-25.metinvest.ua"
-	Conn_Host    = "localhost"
-	Conn_Port    = "8080"
-	Mongo_Db_Url = "127.0.0.1"
+	ConnHost    = "localhost"
+	ConnPort    = "8080"
+	MongoDbUrl = "127.0.0.1"
 )
 
 type Route struct {
@@ -34,7 +32,7 @@ var routes = Routes{
 	Route{
 		"getEvents",
 		"GET",
-		"/allevents",
+		"/events",
 		getEvents,
 	},
 	Route{
@@ -81,57 +79,35 @@ var routes = Routes{
 	},
 }
 
+type EventGen []struct {
+	Source      string    `json:"Source"`
+	Description string    `json:"description"`
+	ID          string    `json:"id"`
+	Count       int       `json:"count"`
+	DateNtime   time.Time `json:"dateNtime"`
+	User        string    `json:"user"`
+}
 type EventsPack struct {
 	ApplicationsCritical []struct {
-		Source      string    `json:"Source"`
-		Description string    `json:"description"`
-		ID          string    `json:"id"`
-		Count       int       `json:"count"`
-		DateNtime   time.Time `json:"dateNtime"`
-		User        string    `json:"user"`
+		EventGen
 	} `json:"Applications_Critical"`
 	SystemError []struct {
-		Source      string    `json:"Source"`
-		Description string    `json:"description"`
-		ID          string    `json:"id"`
-		Count       int       `json:"count"`
-		DateNtime   time.Time `json:"dateNtime"`
-		User        string    `json:"user"`
+		EventGen
 	} `json:"System_Error"`
 	IP                  string `json:"ip"`
 	ApplicationsWarning []struct {
-		Source      string    `json:"Source"`
-		Description string    `json:"description"`
-		ID          string    `json:"id"`
-		Count       int       `json:"count"`
-		DateNtime   time.Time `json:"dateNtime"`
-		User        string    `json:"user"`
+		EventGen
 	} `json:"Applications_Warning"`
 	SystemCritical []struct {
-		Source      string    `json:"Source"`
-		Description string    `json:"description"`
-		ID          string    `json:"id"`
-		Count       int       `json:"count"`
-		DateNtime   time.Time `json:"dateNtime"`
-		User        string    `json:"user"`
+		EventGen
 	} `json:"System_Critical"`
 	Computer          string `json:"computer"`
 	Datemark          string `json:"dateMark"`
 	ApplicationsError []struct {
-		Source      string    `json:"Source"`
-		Description string    `json:"description"`
-		ID          string    `json:"id"`
-		Count       int       `json:"count"`
-		DateNtime   time.Time `json:"dateNtime"`
-		User        string    `json:"user"`
+		EventGen
 	} `json:"Applications_Error"`
 	SystemWarning []struct {
-		Source      string    `json:"Source"`
-		Description string    `json:"description"`
-		ID          string    `json:"id"`
-		Count       int       `json:"count"`
-		DateNtime   time.Time `json:"dateNtime"`
-		User        string    `json:"user"`
+		EventGen
 	} `json:"System_Warning"`
 }
 
@@ -139,7 +115,7 @@ var session *mgo.Session
 var connectionError error
 
 func init() {
-	session, connectionError = mgo.Dial(Mongo_Db_Url)
+	session, connectionError = mgo.Dial(MongoDbUrl)
 	if connectionError != nil {
 		log.Fatal("error connecting to databaase :: ", connectionError)
 	}
@@ -156,7 +132,7 @@ func findDateMark(w http.ResponseWriter, r *http.Request) {
 	// fmt
 	findErr := collection.Find(bson.M{"computer": name, "datemark": datemark}).One(&eventsPack)
 	if findErr != nil {
-		fmt.Println("Error occured while reading from DB ", findErr)
+		fmt.Println("Error occured whil reading from DB ", findErr)
 		return
 	}
 	json.NewEncoder(w).Encode(eventsPack)
@@ -164,8 +140,7 @@ func findDateMark(w http.ResponseWriter, r *http.Request) {
 
 func addEventsPack(w http.ResponseWriter, r *http.Request) {
 	eventsPack := EventsPack{}
-	datemarkExist := EventsPack{}
-
+	// err := json.NewDecoder(r.Body).Decode(&eventsPack)
 	b, err := ioutil.ReadAll(r.Body)
 	b = []byte(b)
 	defer r.Body.Close()
@@ -177,14 +152,6 @@ func addEventsPack(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	collection := session.DB("allWsMonitor").C("WinEvents")
-	collection.Find(bson.M{"computer": eventsPack.Computer, "datemark": eventsPack.Datemark}).One(&datemarkExist)
-
-	if datemarkExist.Computer != "" {
-		fmt.Fprintf(w, "events pack for this date and for this machine exist")
-		log.Printf("events pack for %s %s exist", datemarkExist.Computer, datemarkExist.Datemark)
-		return
-	}
-
 	err = collection.Insert(eventsPack)
 	if err != nil {
 		log.Print("error occured while inserting document in database :: ", err)
@@ -203,31 +170,10 @@ func getDbNames(w http.ResponseWriter, r *http.Request) {
 }
 
 func getEvents(w http.ResponseWriter, r *http.Request) {
-	eventsPack := []EventsPack{}
-	log.Print("getting all events")
-	collection := session.DB("allWsMonitor").C("WinEvents")
-	// fmt
-	findErr := collection.Find(bson.M{}).All(&eventsPack)
-	if findErr != nil {
-		fmt.Println("Error occured while reading from DB ", findErr)
-		return
-	}
-	json.NewEncoder(w).Encode(eventsPack)
+	fmt.Fprintf(w, "Events placeholder")
 }
 func getEventsID(w http.ResponseWriter, r *http.Request) {
-	eventsPack := EventsPack{}
-	vars := mux.Vars(r)
-	name := vars["name"]
-	datemark := vars["datemark"]
-	log.Print("finding datemark for computer ", name)
-	collection := session.DB("allWsMonitor").C("WinEvents")
-	// fmt
-	findErr := collection.Find(bson.M{"computer": name, "datemark": datemark}).One(&eventsPack)
-	if findErr != nil {
-		fmt.Println("Error occured whil reading from DB ", findErr)
-		return
-	}
-	json.NewEncoder(w).Encode(eventsPack)
+
 }
 func getComputer(w http.ResponseWriter, r *http.Request) {
 
@@ -256,7 +202,7 @@ func main() {
 	muxRouter := mux.NewRouter().StrictSlash(true)
 	router := addRoutes(muxRouter)
 	defer session.Close()
-	err := http.ListenAndServe(Conn_Host+":"+Conn_Port, router)
+	err := http.ListenAndServe(ConnHost+":"+ConnPort, router)
 	if err != nil {
 		log.Fatal("error starting http server :: ", err)
 		return

@@ -1,5 +1,7 @@
 # Introduction 
-TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project. 
+The main purpose of this system is a getting experience in DevOps practices and in client-server system development :)
+
+ColorPi can be used for collecting Windows Events from all Windows systems with installed WMF 5. It's completely free and events packages from machines are pretty small. You can customize the frequency of events sending for your purposes.
 
 # Getting Started
 TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
