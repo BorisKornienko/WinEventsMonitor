@@ -115,8 +115,11 @@ var connectionError error
 
 func init() {
 	var dbUser string
+
 	var dbPassword string
-	mongoDbUrl := "mongodb://" + dbUser + ":" + dbPassword + "@colorpi.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&maxIdleTimeMS=120000&appName=@colorpi@"
+
+	var dbConnString string
+	mongoDbUrl := "mongodb://" + dbUser + ":" + dbPassword + dbConnString
 	session, connectionError = mgo.Dial(mongoDbUrl)
 	if connectionError != nil {
 		log.Fatal("error connecting to databaase :: ", connectionError)
