@@ -1,22 +1,34 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
-	mgo "gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+)
+
+var (
+	database   string
+	collection string
 )
 
 const (
 	ConnHost = "localhost"
 	ConnPort = "8080"
+
+	mongoDBConnectionStringEnvVarName = "MONGODB_CONNECTION_STRING"
+	mongoDBDatabaseEnvVarName         = "MONGODB_DATABASE"
+	mongoDBCollectionEnvVarName       = "MONGODB_COLLECTION"
 )
 
 type Route struct {
@@ -110,40 +122,73 @@ type EventsPack struct {
 	} `json:"System_Warning"`
 }
 
-var session *mgo.Session
-var connectionError error
-
-func init() {
-	var dbUser string
-
-	var dbPassword string
-
-	var dbConnString string
-	mongoDbUrl := "mongodb://" + dbUser + ":" + dbPassword + dbConnString
-	session, connectionError = mgo.Dial(mongoDbUrl)
-	if connectionError != nil {
-		log.Fatal("error connecting to databaase :: ", connectionError)
+func connect() *mongo.Client {
+	mongoDBConnectionString := os.Getenv(mongoDBConnectionStringEnvVarName)
+	if mongoDBConnectionString == "" {
+		log.Fatal("missing environment variable: ", mongoDBCollectionEnvVarName)
 	}
-	session.SetMode(mgo.Monotonic, true)
+
+	database = os.Getenv(mongoDBDatabaseEnvVarName)
+	if database == "" {
+		log.Fatal("missing environment variable: ", mongoDBDatabaseEnvVarName)
+	}
+
+	collection = os.Getenv(mongoDBCollectionEnvVarName)
+	if collection == "" {
+		log.Fatal("missing environment variable: ", mongoDBCollectionEnvVarName)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	clientOptions := options.Client().ApplyURI(mongoDBConnectionString).SetDirect(true)
+	c, err := mongo.NewClient(clientOptions)
+
+	err = c.Connect(ctx)
+
+	if err != nil {
+		log.Fatalf("unable to initializa connection %v", err)
+	}
+	err = c.Ping(ctx, nil)
+	if err != nil {
+		log.Fatalf("unable to connect %v", err)
+	}
+
+	return c
+
 }
 
 func findDateMark(w http.ResponseWriter, r *http.Request) {
+	c := connect()
+	ctx := context.Background()
+	defer c.Disconnect(ctx)
+
 	eventsPack := EventsPack{}
 	vars := mux.Vars(r)
 	name := vars["name"]
 	datemark := vars["datemark"]
 	log.Print("finding datemark for computer ", name)
-	collection := session.DB("allWsMonitor").C("WinEvents")
+
+	collection := c.Database(database).Collection(collection)
 	// fmt
-	findErr := collection.Find(bson.M{"computer": name, "datemark": datemark}).One(&eventsPack)
-	if findErr != nil {
-		fmt.Println("Error occured whil reading from DB ", findErr)
+	rs, err := collection.Find(ctx, bson.M{"computer": name, "datemark": datemark})
+	if err != nil {
+		fmt.Println("Error occured whil reading from DB ", err)
 		return
 	}
+	err = rs.All(ctx, &eventsPack)
+	if err != nil {
+		log.Fatalf("failed to list datemark(s) %v", err)
+	}
+
 	json.NewEncoder(w).Encode(eventsPack)
 }
 
 func addEventsPack(w http.ResponseWriter, r *http.Request) {
+	c := connect()
+	ctx := context.Background()
+	defer c.Disconnect(ctx)
+
 	eventsPack := EventsPack{}
 	// err := json.NewDecoder(r.Body).Decode(&eventsPack)
 	b, err := ioutil.ReadAll(r.Body)
@@ -156,17 +201,23 @@ func addEventsPack(w http.ResponseWriter, r *http.Request) {
 		log.Print("error occured while decoding events data :: ", err)
 		return
 	}
-	collection := session.DB("allWsMonitor").C("WinEvents")
-	err = collection.Insert(eventsPack)
+
+	collection := c.Database(database).Collection(collection)
+	resp, err := collection.InsertOne(ctx, eventsPack)
 	if err != nil {
 		log.Print("error occured while inserting document in database :: ", err)
 		return
 	}
 	fmt.Fprintf(w, "last created document computer is :: ", eventsPack.Computer)
+	fmt.Println(w, "last created document computer is :: ", resp.InsertedID)
 }
 
 func getDbNames(w http.ResponseWriter, r *http.Request) {
-	db, err := session.DatabaseNames()
+	c := connect()
+	ctx := context.Background()
+	defer c.Disconnect(ctx)
+
+	db, err := c.ListDatabaseNames(ctx, bson.D{})
 	if err != nil {
 		log.Print("error getting database names :: ", err)
 		return
@@ -206,7 +257,6 @@ func addRoutes(router *mux.Router) *mux.Router {
 func main() {
 	muxRouter := mux.NewRouter().StrictSlash(true)
 	router := addRoutes(muxRouter)
-	defer session.Close()
 	err := http.ListenAndServe(ConnHost+":"+ConnPort, router)
 	if err != nil {
 		log.Fatal("error starting http server :: ", err)
