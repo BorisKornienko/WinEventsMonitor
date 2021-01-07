@@ -1,7 +1,0 @@
-.\parse_events_JSONs.exe C:\allwsmonitor_incoming .\Administrator 123456 ServerName WinEventsMonitor
-	
-	C:\allwsmonitor_incoming - root folder with machine folders
-	.\Administrator - DB user with writes access
-	123456 - DB password
-	ServerName - DB server name
-	WinEventsMonitor - DB name 
