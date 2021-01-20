@@ -1,3 +1,3 @@
-build for docker alpine CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o collorpi . 
+build for docker alpine CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o coloredpi . 
 for smallest size of container add to it a binary
 add ca certs from linux
