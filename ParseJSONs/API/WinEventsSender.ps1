@@ -125,7 +125,7 @@ $toJson['Applications_Warning'] = get-EventsToHash -CategoryName 'application' -
 ####### Convert To JSON and return code to SCCM BaseLine
 try{
     $jsonForSend = $toJSON | ConvertTo-Json
-    Invoke-WebRequest -uri "https://coloredpi.ga/eventspack/add" -Method "POST" -Body $jsonForSend  -ContentType "application/json; charset=utf-8"
+    Invoke-WebRequest -uri "https://www.coloredpi.tech/eventspack/add" -Method "POST" -Body $jsonForSend  -ContentType "application/json; charset=utf-8"
     
     return "writeYes"
 }catch{
